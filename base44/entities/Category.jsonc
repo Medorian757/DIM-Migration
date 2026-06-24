@@ -1,0 +1,29 @@
+{
+  "name": "Category",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Category name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Category description"
+    },
+    "color": {
+      "type": "string",
+      "description": "Category color for visual identification"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Icon name for the category"
+    },
+    "parent_category_id": {
+      "type": "string",
+      "description": "Parent category ID for nested categories"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

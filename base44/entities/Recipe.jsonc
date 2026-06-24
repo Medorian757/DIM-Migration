@@ -1,0 +1,66 @@
+{
+  "name": "Recipe",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Recipe name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Recipe description"
+    },
+    "output_item_id": {
+      "type": "string",
+      "description": "The inventory item this recipe produces"
+    },
+    "yield_quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "How many units this recipe produces"
+    },
+    "selling_price": {
+      "type": "number",
+      "description": "Selling price per unit (overrides item's sale price)"
+    },
+    "ingredients": {
+      "type": "array",
+      "description": "Required ingredients/components",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "description": "Inventory item ID"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity needed"
+          }
+        }
+      }
+    },
+    "labor_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Labor cost per recipe"
+    },
+    "overhead_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Overhead/operational cost per recipe"
+    },
+    "instructions": {
+      "type": "string",
+      "description": "Step-by-step instructions"
+    },
+    "prep_time_minutes": {
+      "type": "number",
+      "description": "Preparation time in minutes"
+    }
+  },
+  "required": [
+    "name",
+    "output_item_id"
+  ]
+}

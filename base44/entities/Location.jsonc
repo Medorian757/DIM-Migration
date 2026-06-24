@@ -1,0 +1,21 @@
+{
+  "name": "Location",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Location name (e.g. Shelf A, Warehouse B)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of this location"
+    },
+    "parent_location_id": {
+      "type": "string",
+      "description": "Parent location ID for nested sub-locations"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

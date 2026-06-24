@@ -1,0 +1,61 @@
+file,line,call
+src/App.jsx,31,base44.auth.isAuthenticated().then(async (authed) => {
+src/App.jsx,33,const user = await base44.auth.me();
+src/lib/AuthContext.jsx,94,const currentUser = await base44.auth.me();
+src/lib/AuthContext.jsx,119,base44.auth.logout(window.location.href);
+src/lib/AuthContext.jsx,122,base44.auth.logout();
+src/lib/AuthContext.jsx,128,base44.auth.redirectToLogin(window.location.href);
+src/lib/PageNotFound.jsx,14,const user = await base44.auth.me();
+src/pages/Settings.jsx,31,"queryFn: () => base44.entities.User.list(),"
+src/pages/Settings.jsx,46,"await base44.users.inviteUser(inviteEmail.trim(), inviteRole);"
+src/pages/Settings.jsx,55,"await base44.entities.User.update(u.id, { role: newRole });"
+src/pages/Settings.jsx,75,"await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim() });"
+src/pages/Settings.jsx,86,"await base44.auth.logout(""/"");"
+src/pages/Settings.jsx,160,"onClick={() => base44.auth.logout(""/"")}"
+src/pages/Categories.jsx,27,queryFn: () => base44.entities.Category.list()
+src/pages/Categories.jsx,32,queryFn: () => base44.entities.InventoryItem.list()
+src/pages/Categories.jsx,36,"mutationFn: (data) => base44.entities.Category.create(data),"
+src/pages/Categories.jsx,48,"mutationFn: ({ id, data }) => base44.entities.Category.update(id, data),"
+src/pages/Categories.jsx,60,"mutationFn: (id) => base44.entities.Category.delete(id),"
+src/pages/Reports.jsx,59,queryFn: () => base44.entities.InventoryItem.list()
+src/pages/Reports.jsx,63,queryFn: () => base44.entities.Category.list()
+src/pages/Reports.jsx,67,"queryFn: () => base44.entities.ItemHistory.list(""-created_date"", 500)"
+src/pages/Reports.jsx,71,queryFn: () => base44.entities.Supplier.list()
+src/pages/Reports.jsx,75,queryFn: () => base44.entities.Location.list()
+src/pages/Suppliers.jsx,157,"queryFn: () => base44.entities.Supplier.list(""-created_date"")"
+src/pages/Suppliers.jsx,162,queryFn: () => base44.entities.InventoryItem.list()
+src/pages/Suppliers.jsx,166,"mutationFn: (d) => base44.entities.Supplier.create(d),"
+src/pages/Suppliers.jsx,181,"mutationFn: ({ id, data }) => base44.entities.Supplier.update(id, data),"
+src/pages/Suppliers.jsx,195,"mutationFn: (id) => base44.entities.Supplier.delete(id),"
+src/pages/Replenishment.jsx,105,queryFn: () => base44.entities.InventoryItem.list()
+src/pages/Replenishment.jsx,110,queryFn: () => base44.entities.Category.list()
+src/pages/Replenishment.jsx,114,"mutationFn: ({ id, data }) => base44.entities.InventoryItem.update(id, data),"
+src/pages/Inventory.jsx,53,"queryFn: () => base44.entities.InventoryItem.list(""-created_date"")"
+src/pages/Inventory.jsx,58,queryFn: () => base44.entities.Category.list()
+src/pages/Inventory.jsx,63,queryFn: () => base44.entities.Supplier.list()
+src/pages/Inventory.jsx,68,"queryFn: () => base44.entities.Location.list(""name"")"
+src/pages/Inventory.jsx,73,"mutationFn: (data) => base44.entities.InventoryItem.create(data),"
+src/pages/Inventory.jsx,85,"mutationFn: ({ id, data }) => base44.entities.InventoryItem.update(id, data),"
+src/pages/Inventory.jsx,97,"mutationFn: (id) => base44.entities.InventoryItem.delete(id),"
+src/pages/Inventory.jsx,109,"mutationFn: (data) => base44.entities.Category.create(data),"
+src/pages/Inventory.jsx,121,"mutationFn: ({ id, data }) => base44.entities.Category.update(id, data),"
+src/pages/Inventory.jsx,263,"await base44.entities.ItemHistory.create({ item_id: originalItem.id, item_name: data.name, ...change });"
+src/pages/Inventory.jsx,268,"await base44.entities.ItemHistory.create({ item_id: newItem.id, item_name: data.name, change_type: ""item_created"" });"
+src/pages/NonTrusted.jsx,10,"queryFn: () => base44.entities.InventoryItem.list(""-created_date""),"
+src/pages/NonTrusted.jsx,15,"queryFn: () => base44.entities.Category.list(),"
+src/pages/Locations.jsx,108,"queryFn: () => base44.entities.Location.list(""name""),"
+src/pages/Locations.jsx,112,"mutationFn: (data) => base44.entities.Location.create(data),"
+src/pages/Locations.jsx,118,"await base44.entities.Location.update(id, data);"
+src/pages/Locations.jsx,121,const allItems = await base44.entities.InventoryItem.list();
+src/pages/Locations.jsx,132,"return base44.entities.InventoryItem.update(item.id, updates);"
+src/pages/Locations.jsx,143,"mutationFn: (id) => base44.entities.Location.delete(id),"
+src/components/usePermissions.jsx,9,base44.auth.me()
+src/components/ProfileSetup.jsx,18,"await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim() });"
+src/components/reports/CustomReportModal.jsx,45,base44.entities.User.list().then(setUsers).catch(() => {});
+src/components/inventory/BulkUpdateBar.jsx,38,"await base44.entities.InventoryItem.update(id, updates);"
+src/components/inventory/ItemHistoryPanel.jsx,53,"queryFn: () => base44.entities.ItemHistory.filter({ item_id: item.id }, ""-created_date"", 50),"
+src/components/inventory/ItemForm.jsx,141,"queryFn: () => base44.entities.Location.list(""name""),"
+src/components/inventory/ItemForm.jsx,204,const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/components/inventory/CSVImportExport.jsx,116,await base44.entities.InventoryItem.delete(item.id);
+src/components/inventory/CSVImportExport.jsx,158,"await base44.entities.InventoryItem.update(existing.id, updates);"
+src/components/inventory/CSVImportExport.jsx,192,await base44.entities.InventoryItem.create(data);

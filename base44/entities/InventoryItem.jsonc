@@ -1,0 +1,169 @@
+{
+  "name": "InventoryItem",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Item name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Item description"
+    },
+    "sku": {
+      "type": "string",
+      "description": "Stock keeping unit / product ID"
+    },
+    "barcode": {
+      "type": "string",
+      "description": "Barcode ID (scanned barcode value)"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "Category this item belongs to"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "Primary supplier ID"
+    },
+    "case_quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of cases/bags in stock"
+    },
+    "case_unit": {
+      "type": "string",
+      "enum": [
+        "cases",
+        "bags",
+        "boxes",
+        "cartons",
+        "pallets",
+        "crates",
+        "packs",
+        "bundles",
+        "drums",
+        "totes"
+      ],
+      "default": "cases",
+      "description": "Type of container unit"
+    },
+    "units_per_case": {
+      "type": "number",
+      "default": 1,
+      "description": "Individual units per case/bag"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "pieces",
+        "each",
+        "kg",
+        "g",
+        "lbs",
+        "oz",
+        "liters",
+        "ml",
+        "gallons",
+        "cups",
+        "meters",
+        "feet"
+      ],
+      "default": "pieces",
+      "description": "Unit of measure for individual units"
+    },
+    "min_cases": {
+      "type": "number",
+      "default": 0,
+      "description": "Minimum case count for low stock alerts"
+    },
+    "max_cases": {
+      "type": "number",
+      "default": 0,
+      "description": "Maximum case count (capacity)"
+    },
+    "unit_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Cost per individual unit"
+    },
+    "sale_price": {
+      "type": "number",
+      "default": 0,
+      "description": "Selling price per individual unit"
+    },
+    "location": {
+      "type": "string",
+      "description": "Primary storage location (legacy single location)"
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Storage locations (multiple supported)",
+      "default": []
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Item image URL"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for filtering"
+    },
+    "lead_time_days": {
+      "type": "number",
+      "default": 7,
+      "description": "Days from order to delivery"
+    },
+    "daily_sales_velocity": {
+      "type": "number",
+      "default": 0,
+      "description": "Average units sold per day"
+    },
+    "reorder_quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Preferred order quantity (cases) when replenishing"
+    },
+    "supplier_name": {
+      "type": "string",
+      "description": "Primary supplier name (legacy text field)"
+    },
+    "out_for_repair": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the item is currently out for repair"
+    },
+    "repair_return_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected return date from repair"
+    },
+    "repair_notes": {
+      "type": "string",
+      "description": "Notes about the repair"
+    },
+    "non_trusted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag indicating the item is non-trusted and requires additional review"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the item expires or is no longer usable"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

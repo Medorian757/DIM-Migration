@@ -1,0 +1,44 @@
+{
+  "name": "ItemHistory",
+  "type": "object",
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "description": "Reference to the inventory item"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Snapshot of item name at time of change"
+    },
+    "change_type": {
+      "type": "string",
+      "enum": [
+        "quantity_change",
+        "price_change",
+        "details_change",
+        "item_created"
+      ],
+      "description": "Type of change made"
+    },
+    "field_changed": {
+      "type": "string",
+      "description": "The field that was changed"
+    },
+    "old_value": {
+      "type": "string",
+      "description": "Previous value"
+    },
+    "new_value": {
+      "type": "string",
+      "description": "New value after change"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes about the change"
+    }
+  },
+  "required": [
+    "item_id",
+    "change_type"
+  ]
+}
