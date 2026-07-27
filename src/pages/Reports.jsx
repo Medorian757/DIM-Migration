@@ -4,24 +4,35 @@ import { useNavigate } from "react-router-dom";
 import PullToRefresh from "../components/PullToRefresh";
 import { dim as base44 } from "@/api/dimDataClient";
 import { usePermissions } from "../components/usePermissions";
-import { Lock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area } from
-"recharts";
+  Cell, AreaChart, Area } from "recharts";
 import {
   Package, DollarSign, TrendingUp, AlertTriangle, ArrowUp, ArrowDown,
-  Layers, MapPin, Clock, Activity, Zap, RefreshCw, Wrench, Printer, Filter } from
-"lucide-react";
+  Layers, MapPin, Clock, Activity, RefreshCw, Wrench, Printer, Filter } from "lucide-react";
 import ExportReportModal from "../components/reports/ExportReportModal";
 import CustomReportModal from "../components/reports/CustomReportModal";
-import { format, subDays, startOfDay, parseISO } from "date-fns";
+import { format, isValid, subDays, startOfDay } from "date-fns";
 
 const PALETTE = ['#bde546ff', '#bde546ff', '#EC4899', '#F97316', '#22C55E', '#14B8A6', '#06B6D4', '#F59E0B'];
+
+const toValidDate = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return isValid(date) ? date : null;
+};
+
+const formatDate = (value, pattern = "MMM d", fallback = "—") => {
+  const date = toValidDate(value);
+  return date ? format(date, pattern) : fallback;
+};
+
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
 
 function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor, trend }) {
   return (
@@ -54,28 +65,35 @@ export default function Reports() {
   const { isAdmin, loading: permLoading } = usePermissions();
   const [exportOpen, setExportOpen] = useState(false);
   const [customReportOpen, setCustomReportOpen] = useState(false);
-  const { data: items = [], isLoading: itemsLoading } = useQuery({
+  const { data: rawItems, isLoading: itemsLoading, isError: itemsError } = useQuery({
     queryKey: ["items"],
     queryFn: () => base44.entities.InventoryItem.list()
   });
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const { data: rawCategories, isLoading: categoriesLoading, isError: categoriesError } = useQuery({
     queryKey: ["categories"],
     queryFn: () => base44.entities.Category.list()
   });
-  const { data: history = [], isLoading: historyLoading } = useQuery({
+  const { data: rawHistory, isLoading: historyLoading, isError: historyError } = useQuery({
     queryKey: ["itemHistory"],
     queryFn: () => base44.entities.ItemHistory.list("-created_date", 500)
   });
-  const { data: suppliers = [] } = useQuery({
+  const { data: rawSuppliers, isError: suppliersError } = useQuery({
     queryKey: ["suppliers"],
     queryFn: () => base44.entities.Supplier.list()
   });
-  const { data: locations = [] } = useQuery({
+  const { data: rawLocations, isError: locationsError } = useQuery({
     queryKey: ["locations"],
     queryFn: () => base44.entities.Location.list()
   });
 
+  const items = asArray(rawItems);
+  const categories = asArray(rawCategories);
+  const history = asArray(rawHistory);
+  const suppliers = asArray(rawSuppliers);
+  const locations = asArray(rawLocations);
+
   const isLoading = itemsLoading || categoriesLoading || historyLoading;
+  const hasQueryError = itemsError || categoriesError || historyError || suppliersError || locationsError;
 
   // Top items by sales velocity
   const topByVelocity = useMemo(() => {
@@ -83,7 +101,7 @@ export default function Reports() {
     filter((i) => (i.daily_sales_velocity || 0) > 0).
     sort((a, b) => (b.daily_sales_velocity || 0) - (a.daily_sales_velocity || 0)).
     slice(0, 8).
-    map((i) => ({ name: i.name.length > 20 ? i.name.slice(0, 18) + "…" : i.name, velocity: i.daily_sales_velocity || 0 }));
+    map((i) => ({ name: String(i.name || "Unnamed item").length > 20 ? String(i.name || "Unnamed item").slice(0, 18) + "…" : String(i.name || "Unnamed item"), velocity: i.daily_sales_velocity || 0 }));
   }, [items]);
 
   // Categories with highest reorder frequency (items at/below min_cases)
@@ -114,7 +132,11 @@ export default function Reports() {
       const dayEnd = new Date(days[d + 1].day);
       while (changeIdx < qtyChanges.length) {
         const ch = qtyChanges[changeIdx];
-        const chDate = new Date(ch.created_date);
+        const chDate = toValidDate(ch.created_date);
+        if (!chDate) {
+          changeIdx++;
+          continue;
+        }
         if (chDate >= days[d + 1].day && chDate < dayEnd) {
           const item = items.find((i) => i.id === ch.item_id);
           if (item) {
@@ -179,7 +201,9 @@ export default function Reports() {
       return { date: format(d, "MMM d"), day: d, changes: 0 };
     });
     history.forEach((h) => {
-      const hDay = startOfDay(new Date(h.created_date));
+      const historyDate = toValidDate(h.created_date);
+      if (!historyDate) return;
+      const hDay = startOfDay(historyDate);
       const match = days.find((d) => d.day.getTime() === hDay.getTime());
       if (match) match.changes += 1;
     });
@@ -241,6 +265,27 @@ export default function Reports() {
           locations={locations}
           history={history}
         />
+      </div>
+    );
+  }
+
+  if (hasQueryError) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <Card className="w-full max-w-md border-slate-800 bg-slate-900 text-white">
+          <CardHeader>
+            <CardTitle>Reports could not load</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-slate-300">
+              One or more report data requests failed. Try refreshing the page.
+            </p>
+            <Button onClick={() => queryClient.invalidateQueries()} className="w-full">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -505,7 +550,7 @@ export default function Reports() {
                       <p className="text-xs text-slate-500">{h.old_value} → {h.new_value}</p>
                       }
                     </div>
-                    <p className="text-xs text-slate-400 shrink-0">{format(new Date(h.created_date), "MMM d")}</p>
+                    <p className="text-xs text-slate-400 shrink-0">{formatDate(h.created_date)}</p>
                   </div>
                   ) :
                   <div className="text-center py-10 text-slate-400">
@@ -538,7 +583,7 @@ export default function Reports() {
                     <div className="text-right shrink-0 ml-3">
                       {item.repair_return_date ?
                     <p className="text-xs font-medium text-amber-700">
-                          Returns {new Date(item.repair_return_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          Returns {formatDate(item.repair_return_date)}
                         </p> :
 
                     <p className="text-xs text-slate-400">No return date</p>
