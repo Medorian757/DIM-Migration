@@ -1,16 +1,34 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import {
+  Edit2,
+  FolderOpen,
+  Package,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+
 import { dim as base44 } from "@/api/dimDataClient";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, FolderOpen, Package } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import CategoryForm from "../components/inventory/CategoryForm";
-import { useNavigate } from "react-router-dom";
 
 export default function Categories() {
   const queryClient = useQueryClient();
@@ -22,255 +40,585 @@ export default function Categories() {
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
 
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+  } = useQuery({
     queryKey: ["categories"],
-    queryFn: () => base44.entities.Category.list()
+    queryFn: () => base44.entities.Category.list(),
   });
 
-  const { data: items = [], isLoading: itemsLoading } = useQuery({
+  const {
+    data: items = [],
+    isLoading: itemsLoading,
+  } = useQuery({
     queryKey: ["items"],
-    queryFn: () => base44.entities.InventoryItem.list()
+    queryFn: () => base44.entities.InventoryItem.list(),
   });
 
   const createCategory = useMutation({
-    mutationFn: (data) => base44.entities.Category.create(data),
+    mutationFn: (data) =>
+      base44.entities.Category.create(data),
+
     onMutate: async (data) => {
-      await queryClient.cancelQueries({ queryKey: ["categories"] });
-      const prev = queryClient.getQueryData(["categories"]);
-      queryClient.setQueryData(["categories"], (old) => [...(old || []), { ...data, id: `temp-${Date.now()}` }]);
-      return { prev };
+      await queryClient.cancelQueries({
+        queryKey: ["categories"],
+      });
+
+      const previousCategories =
+        queryClient.getQueryData(["categories"]);
+
+      queryClient.setQueryData(
+        ["categories"],
+        (currentCategories = []) => [
+          ...currentCategories,
+          {
+            ...data,
+            id: `temp-${Date.now()}`,
+          },
+        ]
+      );
+
+      return {
+        previousCategories,
+      };
     },
-    onError: (_e, _v, ctx) => queryClient.setQueryData(["categories"], ctx.prev),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["categories"] })
+
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(
+        ["categories"],
+        context?.previousCategories
+      );
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
+    },
   });
 
   const updateCategory = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Category.update(id, data),
+    mutationFn: ({ id, data }) =>
+      base44.entities.Category.update(id, data),
+
     onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: ["categories"] });
-      const prev = queryClient.getQueryData(["categories"]);
-      queryClient.setQueryData(["categories"], (old) => (old || []).map((c) => c.id === id ? { ...c, ...data } : c));
-      return { prev };
+      await queryClient.cancelQueries({
+        queryKey: ["categories"],
+      });
+
+      const previousCategories =
+        queryClient.getQueryData(["categories"]);
+
+      queryClient.setQueryData(
+        ["categories"],
+        (currentCategories = []) =>
+          currentCategories.map((category) =>
+            category.id === id
+              ? {
+                  ...category,
+                  ...data,
+                }
+              : category
+          )
+      );
+
+      return {
+        previousCategories,
+      };
     },
-    onError: (_e, _v, ctx) => queryClient.setQueryData(["categories"], ctx.prev),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["categories"] })
+
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(
+        ["categories"],
+        context?.previousCategories
+      );
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
+    },
   });
 
   const deleteCategory = useMutation({
-    mutationFn: (id) => base44.entities.Category.delete(id),
+    mutationFn: (id) =>
+      base44.entities.Category.delete(id),
+
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["categories"] });
-      const prev = queryClient.getQueryData(["categories"]);
-      queryClient.setQueryData(["categories"], (old) => (old || []).filter((c) => c.id !== id));
-      return { prev };
+      await queryClient.cancelQueries({
+        queryKey: ["categories"],
+      });
+
+      const previousCategories =
+        queryClient.getQueryData(["categories"]);
+
+      queryClient.setQueryData(
+        ["categories"],
+        (currentCategories = []) =>
+          currentCategories.filter(
+            (category) => category.id !== id
+          )
+      );
+
+      return {
+        previousCategories,
+      };
     },
-    onError: (_e, _v, ctx) => queryClient.setQueryData(["categories"], ctx.prev),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["categories"] })
+
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(
+        ["categories"],
+        context?.previousCategories
+      );
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
+    },
   });
 
   const handleSaveCategory = async (data) => {
     if (editingCategory) {
-      await updateCategory.mutateAsync({ id: editingCategory.id, data });
+      await updateCategory.mutateAsync({
+        id: editingCategory.id,
+        data,
+      });
     } else {
       await createCategory.mutateAsync(data);
     }
+
     setEditingCategory(null);
   };
 
   const handleDeleteCategory = async () => {
-    if (deletingCategory) {
-      await deleteCategory.mutateAsync(deletingCategory.id);
-      setDeletingCategory(null);
+    if (!deletingCategory) return;
+
+    await deleteCategory.mutateAsync(
+      deletingCategory.id
+    );
+
+    setDeletingCategory(null);
+  };
+
+  const handleOpenCategory = (categoryId) => {
+    navigate(`/CategoryDetails?id=${categoryId}`);
+  };
+
+  const handleOpenCategoryForm = (
+    category = null
+  ) => {
+    setEditingCategory(category);
+    setFormOpen(true);
+  };
+
+  const handleRenameCategory = async (
+    category
+  ) => {
+    const correctedName = toTitleCase(
+      renameValue.trim()
+    );
+
+    if (
+      correctedName &&
+      correctedName !== category.name
+    ) {
+      await updateCategory.mutateAsync({
+        id: category.id,
+        data: {
+          name: correctedName,
+        },
+      });
     }
+
+    setRenamingId(null);
+    setRenameValue("");
   };
 
-  const getItemCountForCategory = (categoryId) => {
-    return items.filter((item) => item.category_id === categoryId).length;
-  };
+  const getItemCountForCategory = (
+    categoryId
+  ) =>
+    items.filter(
+      (item) =>
+        item.category_id === categoryId
+    ).length;
 
-  const getTotalValueForCategory = (categoryId) => {
-    return items.
-    filter((item) => item.category_id === categoryId).
-    reduce((sum, item) => sum + (item.quantity || 0) * (item.unit_cost || 0), 0);
-  };
+  const getTotalValueForCategory = (
+    categoryId
+  ) =>
+    items
+      .filter(
+        (item) =>
+          item.category_id === categoryId
+      )
+      .reduce(
+        (total, item) =>
+          total +
+          Number(item.quantity || 0) *
+            Number(item.unit_cost || 0),
+        0
+      );
 
-  const isLoading = categoriesLoading || itemsLoading;
+  const isLoading =
+    categoriesLoading || itemsLoading;
+
+  const sortedCategories = [...categories].sort(
+    (a, b) =>
+      (a.name || "").localeCompare(
+        b.name || ""
+      )
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Categories</h1>
-            <p className="text-slate-500 mt-1">Organize your inventory with categories</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              Categories
+            </h1>
+
+            <p className="mt-1 text-slate-500">
+              Organize your inventory with
+              categories
+            </p>
           </div>
+
           <Button
+            type="button"
             variant="outline"
-            onClick={() => {
-              setEditingCategory(null);
-              setFormOpen(true);
-            }} className="bg-white text-slate-900">
-            <Plus className="h-4 w-4 mr-2" />
+            className="bg-white text-slate-900"
+            onClick={() =>
+              handleOpenCategoryForm()
+            }
+          >
+            <Plus className="mr-2 h-4 w-4" />
             Add Category
           </Button>
         </div>
-        
-        {/* Categories Grid */}
-        {isLoading ?
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array(6).fill(0).map((_, i) =>
-          <Skeleton key={i} className="h-40 rounded-xl" />
-          )}
-          </div> :
-        categories.length === 0 ?
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-16">
-          
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map(
+              (_, index) => (
+                <Skeleton
+                  key={index}
+                  className="h-40 rounded-xl"
+                />
+              )
+            )}
+          </div>
+        ) : categories.length === 0 ? (
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            className="py-16 text-center"
+          >
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
               <FolderOpen className="h-8 w-8 text-slate-400" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No categories yet</h3>
-            <p className="text-slate-500 mb-4">Create categories to organize your inventory</p>
+
+            <h2 className="mb-2 text-lg font-semibold text-slate-900">
+              No categories yet
+            </h2>
+
+            <p className="mb-4 text-slate-500">
+              Create categories to organize your
+              inventory
+            </p>
+
             <Button
-            onClick={() => {
-              setEditingCategory(null);
-              setFormOpen(true);
-            }}
-            className="bg-indigo-600 hover:bg-indigo-700">
-            
-              <Plus className="h-4 w-4 mr-2" />
+              type="button"
+              className="bg-indigo-600 hover:bg-indigo-700"
+              onClick={() =>
+                handleOpenCategoryForm()
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
               Create Your First Category
             </Button>
-          </motion.div> :
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
-              {[...categories].sort((a, b) => (a.name || "").localeCompare(b.name || "")).map((category, index) => {
-              const itemCount = getItemCountForCategory(category.id);
-              const totalValue = getTotalValueForCategory(category.id);
+              {sortedCategories.map(
+                (category, index) => {
+                  const itemCount =
+                    getItemCountForCategory(
+                      category.id
+                    );
 
-              return (
-                <motion.div
-                  key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: index * 0.05 }}>
-                  
-                    <Card className="p-6 bg-white border-0 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate(`/Inventory?category=${category.id}`)}>
-                      <div className="flex items-start justify-between mb-4">
-                        <div
-                        className="h-12 w-12 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${category.color}20` }}>
-                        
-                          <FolderOpen className="h-6 w-6" style={{ color: category.color }} />
+                  const totalValue =
+                    getTotalValueForCategory(
+                      category.id
+                    );
+
+                  const categoryColor =
+                    category.color || "#6366f1";
+
+                  return (
+                    <motion.div
+                      key={category.id}
+                      initial={{
+                        opacity: 0,
+                        y: 20,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.95,
+                      }}
+                      transition={{
+                        delay: index * 0.05,
+                      }}
+                    >
+                      <Card
+                        className="group cursor-pointer border-0 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg"
+                        onClick={() =>
+                          handleOpenCategory(
+                            category.id
+                          )
+                        }
+                      >
+                        <div className="mb-4 flex items-start justify-between">
+                          <div
+                            className="flex h-12 w-12 items-center justify-center rounded-xl"
+                            style={{
+                              backgroundColor: `${categoryColor}20`,
+                            }}
+                          >
+                            <FolderOpen
+                              className="h-6 w-6"
+                              style={{
+                                color:
+                                  categoryColor,
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(event) => {
+                                event.stopPropagation();
+
+                                handleOpenCategoryForm(
+                                  category
+                                );
+                              }}
+                            >
+                              <Edit2 className="h-4 w-4 text-slate-500" />
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-rose-50"
+                              onClick={(event) => {
+                                event.stopPropagation();
+
+                                setDeletingCategory(
+                                  category
+                                );
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-slate-500 hover:text-rose-500" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingCategory(category);
-                            setFormOpen(true);
-                          }}
-                          className="h-8 w-8">
-                          
-                            <Edit2 className="h-4 w-4 text-slate-500" />
-                          </Button>
-                          <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => { e.stopPropagation(); setDeletingCategory(category); }}
-                          className="h-8 w-8 hover:bg-rose-50">
-                          
-                            <Trash2 className="h-4 w-4 text-slate-500 hover:text-rose-500" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {renamingId === category.id ? (
-                        <input
-                          autoFocus
-                          className="text-lg font-semibold text-slate-900 mb-1 border-b-2 border-indigo-400 outline-none bg-transparent w-full"
-                          value={renameValue}
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          onBlur={async () => {
-                            const toTitleCase = (str) => str.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
-                            const corrected = toTitleCase(renameValue.trim());
-                            if (corrected && corrected !== category.name) {
-                              await updateCategory.mutateAsync({ id: category.id, data: { name: corrected } });
+
+                        {renamingId ===
+                        category.id ? (
+                          <input
+                            autoFocus
+                            className="mb-1 w-full border-b-2 border-indigo-400 bg-transparent text-lg font-semibold text-slate-900 outline-none"
+                            value={renameValue}
+                            onChange={(event) =>
+                              setRenameValue(
+                                event.target.value
+                              )
                             }
-                            setRenamingId(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") e.target.blur();
-                            if (e.key === "Escape") { setRenamingId(null); }
-                          }}
-                        />
-                      ) : (
-                        <h3
-                          className="text-lg font-semibold text-slate-900 mb-1 cursor-text hover:text-indigo-600 transition-colors"
-                          onClick={(e) => { e.stopPropagation(); setRenamingId(category.id); setRenameValue(category.name); }}
-                        >{category.name}</h3>
-                      )}
-                      {category.description &&
-                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{category.description}</p>
-                    }
-                      
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm font-medium text-slate-600">{itemCount} items</span>
-                        </div>
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-950 px-2.5 py-0.5 text-xs font-semibold rounded-md inline-flex items-center border transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent hover:bg-secondary/80">
-                          ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </Badge>
-                      </div>
-                    </Card>
-                  </motion.div>);
+                            onClick={(event) =>
+                              event.stopPropagation()
+                            }
+                            onBlur={() =>
+                              handleRenameCategory(
+                                category
+                              )
+                            }
+                            onKeyDown={(
+                              event
+                            ) => {
+                              if (
+                                event.key ===
+                                "Enter"
+                              ) {
+                                event.currentTarget.blur();
+                              }
 
-            })}
+                              if (
+                                event.key ===
+                                "Escape"
+                              ) {
+                                setRenamingId(
+                                  null
+                                );
+
+                                setRenameValue(
+                                  ""
+                                );
+                              }
+                            }}
+                          />
+                        ) : (
+                          <h2
+                            className="mb-1 cursor-text text-lg font-semibold text-slate-900 transition-colors hover:text-indigo-600"
+                            onClick={(event) => {
+                              event.stopPropagation();
+
+                              setRenamingId(
+                                category.id
+                              );
+
+                              setRenameValue(
+                                category.name || ""
+                              );
+                            }}
+                          >
+                            {category.name}
+                          </h2>
+                        )}
+
+                        {category.description && (
+                          <p className="mb-4 line-clamp-2 text-sm text-slate-500">
+                            {category.description}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-slate-400" />
+
+                            <span className="text-sm font-medium text-slate-600">
+                              {itemCount}{" "}
+                              {itemCount === 1
+                                ? "item"
+                                : "items"}
+                            </span>
+                          </div>
+
+                          <Badge
+                            variant="secondary"
+                            className="rounded-md border-transparent bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-950"
+                          >
+                            $
+                            {totalValue.toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}
+                          </Badge>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                }
+              )}
             </AnimatePresence>
           </div>
-        }
+        )}
       </div>
-      
-      {/* Category Form */}
+
       <CategoryForm
         open={formOpen}
+        category={editingCategory}
+        onSave={handleSaveCategory}
         onClose={() => {
           setFormOpen(false);
           setEditingCategory(null);
         }}
-        category={editingCategory}
-        onSave={handleSaveCategory} />
-      
-      
-      {/* Delete Confirmation */}
-      <Dialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>
+      />
+
+      <Dialog
+        open={Boolean(deletingCategory)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingCategory(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
+            <DialogTitle>
+              Delete Category
+            </DialogTitle>
           </DialogHeader>
+
           <DialogDescription className="py-4">
-            Are you sure you want to delete <strong>"{deletingCategory?.name}"</strong>? 
-            Items in this category won't be deleted, but they will become uncategorized.
+            Are you sure you want to delete{" "}
+            <strong>
+              “{deletingCategory?.name}”
+            </strong>
+            ? Items in this category will not be
+            deleted, but they may become
+            uncategorized.
           </DialogDescription>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingCategory(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setDeletingCategory(null)
+              }
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteCategory}>
-              Delete
+
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={
+                deleteCategory.isPending
+              }
+              onClick={
+                handleDeleteCategory
+              }
+            >
+              {deleteCategory.isPending
+                ? "Deleting..."
+                : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>);
+    </div>
+  );
+}
 
+function toTitleCase(value) {
+  return value.replace(
+    /\w\S*/g,
+    (word) =>
+      word.charAt(0).toUpperCase() +
+      word.slice(1).toLowerCase()
+  );
 }

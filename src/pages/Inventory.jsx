@@ -28,6 +28,7 @@ export default function Inventory() {
   const urlParams = new URLSearchParams(window.location.search);
   const locationParam = urlParams.get("location") || "";
   const categoryParam = urlParams.get("category") || "";
+  const shouldOpenAddItem = urlParams.get("addItem") === "true";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
   const [stockFilter, setStockFilter] = useState("all");
@@ -46,6 +47,24 @@ export default function Inventory() {
   const [showPricing, setShowPricing] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectMode, setSelectMode] = useState(false);
+
+  useEffect(() => {
+    if (!shouldOpenAddItem) return;
+
+    setEditingItem({
+      category_id: categoryParam || "",
+    });
+    setItemFormOpen(true);
+
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete("addItem");
+
+    window.history.replaceState(
+      {},
+      "",
+      `${cleanUrl.pathname}${cleanUrl.search}`
+    );
+  }, [shouldOpenAddItem, categoryParam]);
 
   // Queries
   const { data: items = [], isLoading: itemsLoading } = useQuery({
@@ -295,7 +314,7 @@ export default function Inventory() {
     setBarcodeScannerOpen(false);
     const existing = items.find(i => i.barcode === code || i.sku === code);
     if (existing) {
-      setSearchQuery(code);
+      openEditItem(existing);
     } else {
       // Barcode not found — open Add Item form with SKU pre-filled
       setEditingItem({ barcode: code });

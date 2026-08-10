@@ -11,17 +11,47 @@ import { dim as base44 } from "@/api/dimDataClient";
 import BarcodeScanner from "./BarcodeScanner";
 
 function LocationCheckboxList({ locations, selected, onChange }) {
-  const parents = useMemo(() => locations.filter(l => !l.parent_location_id), [locations]);
+  const parents = useMemo(
+    () =>
+      [...locations]
+        .filter((location) => !location.parent_location_id)
+        .sort((a, b) =>
+          (a.name || "").localeCompare(b.name || "", undefined, {
+            sensitivity: "base",
+          })
+        ),
+    [locations]
+  );
   const childrenByParent = useMemo(() => {
     const map = {};
-    locations.filter(l => l.parent_location_id).forEach(c => {
+    [...locations]
+      .filter((location) => location.parent_location_id)
+      .sort((a, b) =>
+        (a.name || "").localeCompare(b.name || "", undefined, {
+          sensitivity: "base",
+        })
+      )
+      .forEach((c) => {
       if (!map[c.parent_location_id]) map[c.parent_location_id] = [];
       map[c.parent_location_id].push(c);
     });
     return map;
   }, [locations]);
-  const orphans = useMemo(() =>
-    locations.filter(l => l.parent_location_id && !parents.find(p => p.id === l.parent_location_id)),
+  const orphans = useMemo(
+    () =>
+      [...locations]
+        .filter(
+          (location) =>
+            location.parent_location_id &&
+            !parents.find(
+              (parent) => parent.id === location.parent_location_id
+            )
+        )
+        .sort((a, b) =>
+          (a.name || "").localeCompare(b.name || "", undefined, {
+            sensitivity: "base",
+          })
+        ),
     [locations, parents]
   );
 
@@ -346,7 +376,13 @@ export default function ItemForm({ open, onClose, item, categories, suppliers = 
                 </SelectTrigger>
                 <SelectContent className="bg-white text-slate-900">
                   <SelectItem value={null}>No Category</SelectItem>
-                  {categories.map(cat => (
+                  {[...categories]
+                    .sort((a, b) =>
+                      (a.name || "").localeCompare(b.name || "", undefined, {
+                        sensitivity: "base",
+                      })
+                    )
+                    .map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       <div className="flex items-center gap-2">
                         <div 
@@ -373,7 +409,13 @@ export default function ItemForm({ open, onClose, item, categories, suppliers = 
                   </SelectTrigger>
                   <SelectContent className="bg-white text-slate-900">
                     <SelectItem value={null}>No Supplier</SelectItem>
-                    {suppliers.map(s => (
+                    {[...suppliers]
+                      .sort((a, b) =>
+                        (a.name || "").localeCompare(b.name || "", undefined, {
+                          sensitivity: "base",
+                        })
+                      )
+                      .map((s) => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -422,11 +464,11 @@ export default function ItemForm({ open, onClose, item, categories, suppliers = 
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="bg-white text-slate-900">
-                    <SelectItem value="cases">Cases</SelectItem>
-                    <SelectItem value="boxes">Boxes</SelectItem>
-                    <SelectItem value="packs">Packs</SelectItem>
                     <SelectItem value="bags">Bags</SelectItem>
                     <SelectItem value="bottles">Bottles</SelectItem>
+                    <SelectItem value="boxes">Boxes</SelectItem>
+                    <SelectItem value="cases">Cases</SelectItem>
+                    <SelectItem value="packs">Packs</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -451,13 +493,13 @@ export default function ItemForm({ open, onClose, item, categories, suppliers = 
                       <SelectValue placeholder="Unit" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-slate-900">
-                      <SelectItem value="pieces">Pieces</SelectItem>
-                      <SelectItem value="each">Each</SelectItem>
                       <SelectItem value="bottles">Bottles</SelectItem>
+                      <SelectItem value="each">Each</SelectItem>
                       <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="lbs">lbs</SelectItem>
                       <SelectItem value="ml">ml</SelectItem>
                       <SelectItem value="oz">oz</SelectItem>
-                      <SelectItem value="lbs">lbs</SelectItem>
+                      <SelectItem value="pieces">Pieces</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
