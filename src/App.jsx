@@ -1,13 +1,21 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
+
 import {
   BrowserRouter as Router,
   Route,
   Routes,
   useLocation,
 } from "react-router-dom";
+
 import {
   QueryClientProvider,
 } from "@tanstack/react-query";
+
 import {
   AnimatePresence,
   motion,
@@ -17,6 +25,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { queryClientInstance } from "@/lib/query-client";
 import { pagesConfig } from "./pages.config";
 import { dim as base44 } from "@/api/dimDataClient";
+
 import {
   AuthProvider,
   useAuth,
@@ -25,6 +34,7 @@ import {
 import PageNotFound from "./lib/PageNotFound";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import ProfileSetup from "@/components/ProfileSetup";
+
 
 const Settings = lazy(
   () => import("./pages/Settings")
@@ -38,6 +48,10 @@ const Login = lazy(
   () => import("./pages/Login")
 );
 
+const SetPassword = lazy(
+  () => import("./pages/SetPassword")
+);
+
 const UserManagement = lazy(
   () => import("./pages/UserManagement")
 );
@@ -46,13 +60,25 @@ const CategoryDetails = lazy(
   () => import("./pages/CategoryDetails")
 );
 
+
 const {
   Pages,
   Layout,
 } = pagesConfig;
 
+
 const mainPageKey = "Inventory";
 const MainPage = Pages[mainPageKey];
+
+
+function LoadingScreen() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-slate-50">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" />
+    </div>
+  );
+}
+
 
 function LayoutWrapper({
   children,
@@ -63,11 +89,14 @@ function LayoutWrapper({
   }
 
   return (
-    <Layout currentPageName={currentPageName}>
+    <Layout
+      currentPageName={currentPageName}
+    >
       {children}
     </Layout>
   );
 }
+
 
 function AuthenticatedApp() {
   const {
@@ -79,29 +108,56 @@ function AuthenticatedApp() {
 
   const location = useLocation();
 
+  /*
+   * The password setup page must be allowed
+   * to render before the normal DIM
+   * authentication/profile checks.
+   */
+  const isSetPasswordPage =
+    location.pathname === "/set-password";
+
   const [
     needsProfile,
     setNeedsProfile,
   ] = useState(null);
 
+
   useEffect(() => {
     let isMounted = true;
+
+    /*
+     * Do not run the normal profile setup
+     * check while an invited user is
+     * creating their password.
+     */
+    if (isSetPasswordPage) {
+      setNeedsProfile(false);
+
+      return () => {
+        isMounted = false;
+      };
+    }
 
     async function checkProfile() {
       try {
         const authenticated =
           await base44.auth.isAuthenticated();
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         if (!authenticated) {
           setNeedsProfile(false);
           return;
         }
 
-        const user = await base44.auth.me();
+        const user =
+          await base44.auth.me();
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         setNeedsProfile(
           !user?.first_name ||
@@ -124,18 +180,38 @@ function AuthenticatedApp() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isSetPasswordPage]);
+
+
+  /*
+   * PUBLIC INVITATION PASSWORD PAGE
+   *
+   * This is intentionally handled before
+   * the regular auth/profile checks.
+   */
+  if (isSetPasswordPage) {
+    return (
+      <Suspense
+        fallback={<LoadingScreen />}
+      >
+        <Routes>
+          <Route
+            path="/set-password"
+            element={<SetPassword />}
+          />
+        </Routes>
+      </Suspense>
+    );
+  }
+
 
   if (
     isLoadingPublicSettings ||
     isLoadingAuth
   ) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-800" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
+
 
   if (
     needsProfile === true &&
@@ -150,12 +226,15 @@ function AuthenticatedApp() {
     );
   }
 
+
   if (authError) {
     if (
       authError.type ===
       "user_not_registered"
     ) {
-      return <UserNotRegisteredError />;
+      return (
+        <UserNotRegisteredError />
+      );
     }
 
     if (
@@ -168,6 +247,7 @@ function AuthenticatedApp() {
     }
   }
 
+
   return (
     <AnimatePresence
       mode="wait"
@@ -175,26 +255,37 @@ function AuthenticatedApp() {
     >
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{
+          opacity: 0,
+        }}
+        animate={{
+          opacity: 1,
+        }}
+        exit={{
+          opacity: 0,
+        }}
         transition={{
           duration: 0.15,
           ease: "easeInOut",
         }}
-        style={{ minHeight: "100vh" }}
+        style={{
+          minHeight: "100vh",
+        }}
       >
         <Suspense
-          fallback={
-            <div className="fixed inset-0 flex items-center justify-center bg-slate-50">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" />
-            </div>
-          }
+          fallback={<LoadingScreen />}
         >
-          <Routes location={location}>
+          <Routes
+            location={location}
+          >
             <Route
               path="/login"
               element={<Login />}
+            />
+
+            <Route
+              path="/set-password"
+              element={<SetPassword />}
             />
 
             <Route
@@ -210,7 +301,9 @@ function AuthenticatedApp() {
               }
             />
 
-            {Object.entries(Pages).map(
+            {Object.entries(
+              Pages
+            ).map(
               ([path, Page]) => (
                 <Route
                   key={path}
@@ -231,7 +324,9 @@ function AuthenticatedApp() {
             <Route
               path="/Settings"
               element={
-                <LayoutWrapper currentPageName="Settings">
+                <LayoutWrapper
+                  currentPageName="Settings"
+                >
                   <Settings />
                 </LayoutWrapper>
               }
@@ -240,7 +335,9 @@ function AuthenticatedApp() {
             <Route
               path="/Locations"
               element={
-                <LayoutWrapper currentPageName="Locations">
+                <LayoutWrapper
+                  currentPageName="Locations"
+                >
                   <Locations />
                 </LayoutWrapper>
               }
@@ -249,7 +346,9 @@ function AuthenticatedApp() {
             <Route
               path="/UserManagement"
               element={
-                <LayoutWrapper currentPageName="UserManagement">
+                <LayoutWrapper
+                  currentPageName="UserManagement"
+                >
                   <UserManagement />
                 </LayoutWrapper>
               }
@@ -258,7 +357,9 @@ function AuthenticatedApp() {
             <Route
               path="/CategoryDetails"
               element={
-                <LayoutWrapper currentPageName="CategoryDetails">
+                <LayoutWrapper
+                  currentPageName="CategoryDetails"
+                >
                   <CategoryDetails />
                 </LayoutWrapper>
               }
@@ -266,7 +367,9 @@ function AuthenticatedApp() {
 
             <Route
               path="*"
-              element={<PageNotFound />}
+              element={
+                <PageNotFound />
+              }
             />
           </Routes>
         </Suspense>
@@ -275,11 +378,14 @@ function AuthenticatedApp() {
   );
 }
 
+
 export default function App() {
   return (
     <AuthProvider>
       <QueryClientProvider
-        client={queryClientInstance}
+        client={
+          queryClientInstance
+        }
       >
         <Router>
           <AuthenticatedApp />
