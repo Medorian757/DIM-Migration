@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import {
   useNavigate,
   useSearchParams,
@@ -9,14 +10,6 @@ import { supabase } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 const PENDING_ONBOARDING_KEY =
   "dim-pending-organization-onboarding";
 
@@ -37,6 +30,9 @@ export default function Login() {
 
   const [password, setPassword] =
     useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
 
   const [firstName, setFirstName] =
     useState("");
@@ -181,191 +177,293 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>
-            {isSignUp
-              ? "Create your DIM office"
-              : "Sign in to DIM"}
-          </CardTitle>
+    <div className="min-h-screen bg-slate-100">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+        {/* Desktop branding panel */}
+        <section className="relative hidden min-h-screen overflow-hidden lg:block">
+          <img
+            src="/dim-login-background.png"
+            alt="DIM Dental Inventory Management"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+        </section>
 
-          <CardDescription>
-            {isSignUp
-              ? "Create your administrator account and a private workspace for your dental office."
-              : "Sign in to access your dental office inventory."}
-          </CardDescription>
-        </CardHeader>
+        {/* Login panel */}
+        <section className="relative min-h-screen overflow-y-auto lg:flex lg:items-center lg:justify-center lg:overflow-hidden lg:bg-gradient-to-br lg:from-sky-50 lg:via-blue-50 lg:to-slate-100 lg:px-10 lg:py-10">
+          {/* Mobile/tablet: one continuous full-screen background */}
+          <img
+            src="/dim-login-background.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-top lg:hidden"
+          />
 
-        <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={async (event) => {
-              await submit(event);
+          {/* Soft overlay keeps the card readable without hiding the branding */}
+          <div className="absolute inset-0 bg-white/[0.03] lg:hidden" />
 
-              if (
-                isSignUp &&
-                !error
-              ) {
-                const pending =
-                  getPendingOnboarding();
+          {/* On mobile, the card begins below the logo + company name.
+              Shorter phones can scroll naturally. */}
+          <div className="relative z-10 flex min-h-screen items-start justify-center px-4 pb-8 pt-[52vh] sm:px-6 sm:pt-[50vh] lg:min-h-0 lg:w-full lg:items-center lg:p-0">
+            <div className="w-full max-w-md rounded-[28px] border border-white/80 bg-white/95 p-5 shadow-2xl backdrop-blur-sm sm:p-7 lg:p-8">
+              <div className="mb-5 sm:mb-6">
+                <h1 className="text-[32px] font-bold leading-tight tracking-tight text-slate-900 sm:text-[34px]">
+                  {isSignUp
+                    ? "Create your DIM office"
+                    : "Sign in"}
+                </h1>
 
-                if (pending) {
-                  handleFormMessage(
-                    "Check your email to confirm your account. After confirmation, return here and sign in."
-                  );
-                }
-              }
-            }}
-          >
-            {isSignUp && (
-              <>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">
-                      First name
-                    </Label>
+                <p className="mt-2 text-[15px] leading-6 text-slate-600">
+                  {isSignUp
+                    ? "Create your administrator account and a private workspace for your dental office."
+                    : "Sign in to access your dental office inventory."}
+                </p>
+              </div>
+
+              <form
+                className="space-y-4"
+                onSubmit={async (event) => {
+                  await submit(event);
+
+                  if (
+                    isSignUp &&
+                    !error
+                  ) {
+                    const pending =
+                      getPendingOnboarding();
+
+                    if (pending) {
+                      handleFormMessage(
+                        "Check your email to confirm your account. After confirmation, return here and sign in."
+                      );
+                    }
+                  }
+                }}
+              >
+                {isSignUp && (
+                  <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="firstName"
+                          className="font-semibold text-slate-800"
+                        >
+                          First name
+                        </Label>
+
+                        <Input
+                          id="firstName"
+                          type="text"
+                          value={firstName}
+                          onChange={(event) =>
+                            setFirstName(
+                              event.target.value
+                            )
+                          }
+                          autoComplete="given-name"
+                          className="h-11 rounded-xl border-slate-300 bg-white sm:h-12"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="lastName"
+                          className="font-semibold text-slate-800"
+                        >
+                          Last name
+                        </Label>
+
+                        <Input
+                          id="lastName"
+                          type="text"
+                          value={lastName}
+                          onChange={(event) =>
+                            setLastName(
+                              event.target.value
+                            )
+                          }
+                          autoComplete="family-name"
+                          className="h-11 rounded-xl border-slate-300 bg-white sm:h-12"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="organizationName"
+                        className="font-semibold text-slate-800"
+                      >
+                        Dental office name
+                      </Label>
+
+                      <Input
+                        id="organizationName"
+                        type="text"
+                        value={organizationName}
+                        onChange={(event) =>
+                          setOrganizationName(
+                            event.target.value
+                          )
+                        }
+                        placeholder="Example: Coastal Family Dental"
+                        autoComplete="organization"
+                        className="h-11 rounded-xl border-slate-300 bg-white sm:h-12"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="email"
+                    className="font-semibold text-slate-800"
+                  >
+                    Email
+                  </Label>
+
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
 
                     <Input
-                      id="firstName"
-                      type="text"
-                      value={firstName}
+                      id="email"
+                      type="email"
+                      value={email}
                       onChange={(event) =>
-                        setFirstName(
+                        setEmail(
                           event.target.value
                         )
                       }
-                      autoComplete="given-name"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">
-                      Last name
-                    </Label>
-
-                    <Input
-                      id="lastName"
-                      type="text"
-                      value={lastName}
-                      onChange={(event) =>
-                        setLastName(
-                          event.target.value
-                        )
-                      }
-                      autoComplete="family-name"
+                      placeholder="Enter your email"
+                      autoComplete="email"
+                      className="h-11 rounded-xl border-slate-300 bg-white pl-12 sm:h-12"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="organizationName">
-                    Dental office name
+                  <Label
+                    htmlFor="password"
+                    className="font-semibold text-slate-800"
+                  >
+                    Password
                   </Label>
 
-                  <Input
-                    id="organizationName"
-                    type="text"
-                    value={organizationName}
-                    onChange={(event) =>
-                      setOrganizationName(
-                        event.target.value
-                      )
-                    }
-                    placeholder="Example: Coastal Family Dental"
-                    autoComplete="organization"
-                    required
-                  />
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+
+                    <Input
+                      id="password"
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
+                      value={password}
+                      onChange={(event) =>
+                        setPassword(
+                          event.target.value
+                        )
+                      }
+                      placeholder="Enter your password"
+                      autoComplete={
+                        isSignUp
+                          ? "new-password"
+                          : "current-password"
+                      }
+                      className="h-11 rounded-xl border-slate-300 bg-white pl-12 pr-12 sm:h-12"
+                      required
+                      minLength={6}
+                    />
+
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
+                      onClick={() =>
+                        setShowPassword(
+                          (current) =>
+                            !current
+                        )
+                      }
+                      aria-label={
+                        showPassword
+                          ? "Hide password"
+                          : "Show password"
+                      }
+                    >
+                      {showPassword
+                        ? (
+                          <EyeOff className="h-5 w-5" />
+                        )
+                        : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                    </button>
+                  </div>
                 </div>
-              </>
-            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">
-                Email
-              </Label>
+                {error && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                    <p className="text-sm text-red-700">
+                      {error}
+                    </p>
+                  </div>
+                )}
 
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) =>
-                  setEmail(
-                    event.target.value
-                  )
-                }
-                autoComplete="email"
-                required
-              />
-            </div>
+                {message && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+                    <p className="text-sm text-green-700">
+                      {message}
+                    </p>
+                  </div>
+                )}
 
-            <div className="space-y-2">
-              <Label htmlFor="password">
-                Password
-              </Label>
+                <Button
+                  className="h-11 w-full rounded-xl bg-gradient-to-r from-green-700 via-green-600 to-green-700 text-base font-semibold text-white shadow-md transition hover:from-green-800 hover:via-green-700 hover:to-green-800 sm:h-12"
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  <Lock className="mr-2 h-5 w-5" />
 
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) =>
-                  setPassword(
-                    event.target.value
-                  )
-                }
-                autoComplete={
-                  isSignUp
-                    ? "new-password"
-                    : "current-password"
-                }
-                required
-                minLength={6}
-              />
-            </div>
+                  {isSubmitting
+                    ? "Working..."
+                    : isSignUp
+                      ? "Create dental office"
+                      : "Sign in"}
+                </Button>
+              </form>
 
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-                <p className="text-sm text-red-700">
-                  {error}
-                </p>
+              <div className="my-4 flex items-center gap-3 sm:my-5">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="text-sm text-slate-500">
+                  or
+                </span>
+                <div className="h-px flex-1 bg-slate-200" />
               </div>
-            )}
 
-            {message && (
-              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2">
-                <p className="text-sm text-green-700">
-                  {message}
-                </p>
-              </div>
-            )}
-
-            <Button
-              className="w-full"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? "Working..."
-                : isSignUp
-                  ? "Create dental office"
-                  : "Sign in"}
-            </Button>
-          </form>
-
-          <button
-            type="button"
-            className="mt-4 w-full text-sm text-slate-600 underline hover:text-slate-900"
-            onClick={switchMode}
-            disabled={isSubmitting}
-          >
-            {isSignUp
-              ? "Already have an account? Sign in"
-              : "New dental office? Create an account"}
-          </button>
-        </CardContent>
-      </Card>
+              <button
+                type="button"
+                className="w-full text-center text-sm font-medium text-slate-700 transition hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={switchMode}
+                disabled={isSubmitting}
+              >
+                {isSignUp
+                  ? "Already have an account? Sign in"
+                  : (
+                    <>
+                      New dental office?{" "}
+                      <span className="text-blue-600 underline underline-offset-2">
+                        Create an account
+                      </span>
+                    </>
+                  )}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

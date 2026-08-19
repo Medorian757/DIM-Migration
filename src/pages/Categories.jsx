@@ -12,13 +12,17 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+} from "framer-motion";
 
 import { dim as base44 } from "@/api/dimDataClient";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+
 import {
   Dialog,
   DialogContent,
@@ -29,36 +33,75 @@ import {
 } from "@/components/ui/dialog";
 
 import CategoryForm from "../components/inventory/CategoryForm";
+import { usePermissions } from "../components/usePermissions";
+
 
 export default function Categories() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [deletingCategory, setDeletingCategory] = useState(null);
-  const [renamingId, setRenamingId] = useState(null);
-  const [renameValue, setRenameValue] = useState("");
+  const {
+    isAdmin,
+  } = usePermissions();
+
+  const [
+    formOpen,
+    setFormOpen,
+  ] = useState(false);
+
+  const [
+    editingCategory,
+    setEditingCategory,
+  ] = useState(null);
+
+  const [
+    deletingCategory,
+    setDeletingCategory,
+  ] = useState(null);
+
+  const [
+    renamingId,
+    setRenamingId,
+  ] = useState(null);
+
+  const [
+    renameValue,
+    setRenameValue,
+  ] = useState("");
+
 
   const {
     data: categories = [],
     isLoading: categoriesLoading,
   } = useQuery({
     queryKey: ["categories"],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () =>
+      base44.entities.Category.list(),
   });
+
 
   const {
     data: items = [],
     isLoading: itemsLoading,
   } = useQuery({
     queryKey: ["items"],
-    queryFn: () => base44.entities.InventoryItem.list(),
+    queryFn: () =>
+      base44.entities.InventoryItem.list(),
   });
 
+
   const createCategory = useMutation({
-    mutationFn: (data) =>
-      base44.entities.Category.create(data),
+    mutationFn: async (data) => {
+      if (!isAdmin) {
+        throw new Error(
+          "Only administrators can create categories."
+        );
+      }
+
+      return base44.entities.Category.create(
+        data
+      );
+    },
 
     onMutate: async (data) => {
       await queryClient.cancelQueries({
@@ -66,7 +109,9 @@ export default function Categories() {
       });
 
       const previousCategories =
-        queryClient.getQueryData(["categories"]);
+        queryClient.getQueryData(
+          ["categories"]
+        );
 
       queryClient.setQueryData(
         ["categories"],
@@ -84,7 +129,11 @@ export default function Categories() {
       };
     },
 
-    onError: (_error, _variables, context) => {
+    onError: (
+      _error,
+      _variables,
+      context
+    ) => {
       queryClient.setQueryData(
         ["categories"],
         context?.previousCategories
@@ -98,28 +147,48 @@ export default function Categories() {
     },
   });
 
-  const updateCategory = useMutation({
-    mutationFn: ({ id, data }) =>
-      base44.entities.Category.update(id, data),
 
-    onMutate: async ({ id, data }) => {
+  const updateCategory = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }) => {
+      if (!isAdmin) {
+        throw new Error(
+          "Only administrators can edit categories."
+        );
+      }
+
+      return base44.entities.Category.update(
+        id,
+        data
+      );
+    },
+
+    onMutate: async ({
+      id,
+      data,
+    }) => {
       await queryClient.cancelQueries({
         queryKey: ["categories"],
       });
 
       const previousCategories =
-        queryClient.getQueryData(["categories"]);
+        queryClient.getQueryData(
+          ["categories"]
+        );
 
       queryClient.setQueryData(
         ["categories"],
         (currentCategories = []) =>
-          currentCategories.map((category) =>
-            category.id === id
-              ? {
-                  ...category,
-                  ...data,
-                }
-              : category
+          currentCategories.map(
+            (category) =>
+              category.id === id
+                ? {
+                    ...category,
+                    ...data,
+                  }
+                : category
           )
       );
 
@@ -128,7 +197,11 @@ export default function Categories() {
       };
     },
 
-    onError: (_error, _variables, context) => {
+    onError: (
+      _error,
+      _variables,
+      context
+    ) => {
       queryClient.setQueryData(
         ["categories"],
         context?.previousCategories
@@ -142,9 +215,19 @@ export default function Categories() {
     },
   });
 
+
   const deleteCategory = useMutation({
-    mutationFn: (id) =>
-      base44.entities.Category.delete(id),
+    mutationFn: async (id) => {
+      if (!isAdmin) {
+        throw new Error(
+          "Only administrators can delete categories."
+        );
+      }
+
+      return base44.entities.Category.delete(
+        id
+      );
+    },
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({
@@ -152,13 +235,16 @@ export default function Categories() {
       });
 
       const previousCategories =
-        queryClient.getQueryData(["categories"]);
+        queryClient.getQueryData(
+          ["categories"]
+        );
 
       queryClient.setQueryData(
         ["categories"],
         (currentCategories = []) =>
           currentCategories.filter(
-            (category) => category.id !== id
+            (category) =>
+              category.id !== id
           )
       );
 
@@ -167,7 +253,11 @@ export default function Categories() {
       };
     },
 
-    onError: (_error, _variables, context) => {
+    onError: (
+      _error,
+      _variables,
+      context
+    ) => {
       queryClient.setQueryData(
         ["categories"],
         context?.previousCategories
@@ -181,70 +271,124 @@ export default function Categories() {
     },
   });
 
-  const handleSaveCategory = async (data) => {
-    if (editingCategory) {
-      await updateCategory.mutateAsync({
-        id: editingCategory.id,
-        data,
-      });
-    } else {
-      await createCategory.mutateAsync(data);
-    }
 
-    setEditingCategory(null);
-  };
+  const handleSaveCategory =
+    async (data) => {
+      if (!isAdmin) {
+        return;
+      }
 
-  const handleDeleteCategory = async () => {
-    if (!deletingCategory) return;
+      if (editingCategory) {
+        await updateCategory.mutateAsync({
+          id: editingCategory.id,
+          data,
+        });
+      } else {
+        await createCategory.mutateAsync(
+          data
+        );
+      }
 
-    await deleteCategory.mutateAsync(
-      deletingCategory.id
+      setEditingCategory(null);
+      setFormOpen(false);
+    };
+
+
+  const handleDeleteCategory =
+    async () => {
+      if (
+        !isAdmin ||
+        !deletingCategory
+      ) {
+        return;
+      }
+
+      await deleteCategory.mutateAsync(
+        deletingCategory.id
+      );
+
+      setDeletingCategory(null);
+    };
+
+
+  const handleOpenCategory = (
+    categoryId
+  ) => {
+    navigate(
+      `/CategoryDetails?id=${categoryId}`
     );
-
-    setDeletingCategory(null);
   };
 
-  const handleOpenCategory = (categoryId) => {
-    navigate(`/CategoryDetails?id=${categoryId}`);
-  };
 
   const handleOpenCategoryForm = (
     category = null
   ) => {
+    if (!isAdmin) {
+      return;
+    }
+
     setEditingCategory(category);
     setFormOpen(true);
   };
 
-  const handleRenameCategory = async (
+
+  const handleStartRename = (
+    event,
     category
   ) => {
-    const correctedName = toTitleCase(
-      renameValue.trim()
-    );
+    event.stopPropagation();
 
-    if (
-      correctedName &&
-      correctedName !== category.name
-    ) {
-      await updateCategory.mutateAsync({
-        id: category.id,
-        data: {
-          name: correctedName,
-        },
-      });
+    if (!isAdmin) {
+      return;
     }
 
-    setRenamingId(null);
-    setRenameValue("");
+    setRenamingId(category.id);
+    setRenameValue(
+      category.name || ""
+    );
   };
+
+
+  const handleRenameCategory =
+    async (category) => {
+      if (!isAdmin) {
+        setRenamingId(null);
+        setRenameValue("");
+        return;
+      }
+
+      const correctedName =
+        toTitleCase(
+          renameValue.trim()
+        );
+
+      if (
+        correctedName &&
+        correctedName !==
+          category.name
+      ) {
+        await updateCategory.mutateAsync({
+          id: category.id,
+          data: {
+            name: correctedName,
+          },
+        });
+      }
+
+      setRenamingId(null);
+      setRenameValue("");
+    };
+
 
   const getItemCountForCategory = (
     categoryId
   ) =>
     items.filter(
       (item) =>
-        item.category_id === categoryId
+        item.category_id ===
+        categoryId
     ).length;
+
 
   const getTotalValueForCategory = (
     categoryId
@@ -252,29 +396,40 @@ export default function Categories() {
     items
       .filter(
         (item) =>
-          item.category_id === categoryId
+          item.category_id ===
+          categoryId
       )
       .reduce(
         (total, item) =>
           total +
-          Number(item.quantity || 0) *
-            Number(item.unit_cost || 0),
+          Number(
+            item.quantity || 0
+          ) *
+            Number(
+              item.unit_cost || 0
+            ),
         0
       );
 
-  const isLoading =
-    categoriesLoading || itemsLoading;
 
-  const sortedCategories = [...categories].sort(
-    (a, b) =>
-      (a.name || "").localeCompare(
-        b.name || ""
-      )
+  const isLoading =
+    categoriesLoading ||
+    itemsLoading;
+
+
+  const sortedCategories = [
+    ...categories,
+  ].sort((a, b) =>
+    (a.name || "").localeCompare(
+      b.name || ""
+    )
   );
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">
@@ -287,29 +442,32 @@ export default function Categories() {
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="bg-white text-slate-900"
-            onClick={() =>
-              handleOpenCategoryForm()
-            }
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Category
-          </Button>
+          {isAdmin && (
+            <Button
+              type="button"
+              variant="outline"
+              className="bg-white text-slate-900"
+              onClick={() =>
+                handleOpenCategoryForm()
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+          )}
         </div>
+
 
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map(
-              (_, index) => (
-                <Skeleton
-                  key={index}
-                  className="h-40 rounded-xl"
-                />
-              )
-            )}
+            {Array.from({
+              length: 6,
+            }).map((_, index) => (
+              <Skeleton
+                key={index}
+                className="h-40 rounded-xl"
+              />
+            ))}
           </div>
         ) : categories.length === 0 ? (
           <motion.div
@@ -332,26 +490,33 @@ export default function Categories() {
             </h2>
 
             <p className="mb-4 text-slate-500">
-              Create categories to organize your
-              inventory
+              {isAdmin
+                ? "Create categories to organize your inventory."
+                : "No categories are currently available."}
             </p>
 
-            <Button
-              type="button"
-              className="bg-indigo-600 hover:bg-indigo-700"
-              onClick={() =>
-                handleOpenCategoryForm()
-              }
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Category
-            </Button>
+            {isAdmin && (
+              <Button
+                type="button"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={() =>
+                  handleOpenCategoryForm()
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Your First Category
+              </Button>
+            )}
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
+
               {sortedCategories.map(
-                (category, index) => {
+                (
+                  category,
+                  index
+                ) => {
                   const itemCount =
                     getItemCountForCategory(
                       category.id
@@ -363,11 +528,14 @@ export default function Categories() {
                     );
 
                   const categoryColor =
-                    category.color || "#6366f1";
+                    category.color ||
+                    "#6366f1";
 
                   return (
                     <motion.div
-                      key={category.id}
+                      key={
+                        category.id
+                      }
                       initial={{
                         opacity: 0,
                         y: 20,
@@ -381,7 +549,9 @@ export default function Categories() {
                         scale: 0.95,
                       }}
                       transition={{
-                        delay: index * 0.05,
+                        delay:
+                          index *
+                          0.05,
                       }}
                     >
                       <Card
@@ -393,10 +563,12 @@ export default function Categories() {
                         }
                       >
                         <div className="mb-4 flex items-start justify-between">
+
                           <div
                             className="flex h-12 w-12 items-center justify-center rounded-xl"
                             style={{
-                              backgroundColor: `${categoryColor}20`,
+                              backgroundColor:
+                                `${categoryColor}20`,
                             }}
                           >
                             <FolderOpen
@@ -408,53 +580,73 @@ export default function Categories() {
                             />
                           </div>
 
-                          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={(event) => {
-                                event.stopPropagation();
 
-                                handleOpenCategoryForm(
-                                  category
-                                );
-                              }}
-                            >
-                              <Edit2 className="h-4 w-4 text-slate-500" />
-                            </Button>
+                          {isAdmin && (
+                            <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-rose-50"
-                              onClick={(event) => {
-                                event.stopPropagation();
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(
+                                  event
+                                ) => {
+                                  event.stopPropagation();
 
-                                setDeletingCategory(
-                                  category
-                                );
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-slate-500 hover:text-rose-500" />
-                            </Button>
-                          </div>
+                                  handleOpenCategoryForm(
+                                    category
+                                  );
+                                }}
+                              >
+                                <Edit2 className="h-4 w-4 text-slate-500" />
+                              </Button>
+
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-rose-50"
+                                onClick={(
+                                  event
+                                ) => {
+                                  event.stopPropagation();
+
+                                  setDeletingCategory(
+                                    category
+                                  );
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-slate-500 hover:text-rose-500" />
+                              </Button>
+
+                            </div>
+                          )}
                         </div>
 
-                        {renamingId ===
-                        category.id ? (
+
+                        {isAdmin &&
+                        renamingId ===
+                          category.id ? (
                           <input
                             autoFocus
                             className="mb-1 w-full border-b-2 border-indigo-400 bg-transparent text-lg font-semibold text-slate-900 outline-none"
-                            value={renameValue}
-                            onChange={(event) =>
+                            value={
+                              renameValue
+                            }
+                            onChange={(
+                              event
+                            ) =>
                               setRenameValue(
-                                event.target.value
+                                event
+                                  .target
+                                  .value
                               )
                             }
-                            onClick={(event) =>
+                            onClick={(
+                              event
+                            ) =>
                               event.stopPropagation()
                             }
                             onBlur={() =>
@@ -488,40 +680,50 @@ export default function Categories() {
                           />
                         ) : (
                           <h2
-                            className="mb-1 cursor-text text-lg font-semibold text-slate-900 transition-colors hover:text-indigo-600"
-                            onClick={(event) => {
-                              event.stopPropagation();
-
-                              setRenamingId(
-                                category.id
-                              );
-
-                              setRenameValue(
-                                category.name || ""
-                              );
-                            }}
+                            className={
+                              isAdmin
+                                ? "mb-1 cursor-text text-lg font-semibold text-slate-900 transition-colors hover:text-indigo-600"
+                                : "mb-1 text-lg font-semibold text-slate-900"
+                            }
+                            onClick={(
+                              event
+                            ) =>
+                              handleStartRename(
+                                event,
+                                category
+                              )
+                            }
                           >
-                            {category.name}
+                            {
+                              category.name
+                            }
                           </h2>
                         )}
 
+
                         {category.description && (
                           <p className="mb-4 line-clamp-2 text-sm text-slate-500">
-                            {category.description}
+                            {
+                              category.description
+                            }
                           </p>
                         )}
 
+
                         <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-slate-400" />
 
                             <span className="text-sm font-medium text-slate-600">
                               {itemCount}{" "}
-                              {itemCount === 1
+                              {itemCount ===
+                              1
                                 ? "item"
                                 : "items"}
                             </span>
                           </div>
+
 
                           <Badge
                             variant="secondary"
@@ -531,94 +733,134 @@ export default function Categories() {
                             {totalValue.toLocaleString(
                               undefined,
                               {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
+                                minimumFractionDigits:
+                                  2,
+                                maximumFractionDigits:
+                                  2,
                               }
                             )}
                           </Badge>
+
                         </div>
                       </Card>
                     </motion.div>
                   );
                 }
               )}
+
             </AnimatePresence>
           </div>
         )}
       </div>
 
-      <CategoryForm
-        open={formOpen}
-        category={editingCategory}
-        onSave={handleSaveCategory}
-        onClose={() => {
-          setFormOpen(false);
-          setEditingCategory(null);
-        }}
-      />
 
-      <Dialog
-        open={Boolean(deletingCategory)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeletingCategory(null);
+      {isAdmin && (
+        <CategoryForm
+          open={formOpen}
+          category={
+            editingCategory
           }
-        }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Delete Category
-            </DialogTitle>
-          </DialogHeader>
+          onSave={
+            handleSaveCategory
+          }
+          onClose={() => {
+            setFormOpen(false);
+            setEditingCategory(
+              null
+            );
+          }}
+        />
+      )}
 
-          <DialogDescription className="py-4">
-            Are you sure you want to delete{" "}
-            <strong>
-              “{deletingCategory?.name}”
-            </strong>
-            ? Items in this category will not be
-            deleted, but they may become
-            uncategorized.
-          </DialogDescription>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                setDeletingCategory(null)
-              }
-            >
-              Cancel
-            </Button>
+      {isAdmin && (
+        <Dialog
+          open={Boolean(
+            deletingCategory
+          )}
+          onOpenChange={(
+            open
+          ) => {
+            if (!open) {
+              setDeletingCategory(
+                null
+              );
+            }
+          }}
+        >
+          <DialogContent className="max-w-md">
 
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={
-                deleteCategory.isPending
-              }
-              onClick={
-                handleDeleteCategory
-              }
-            >
-              {deleteCategory.isPending
-                ? "Deleting..."
-                : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogHeader>
+              <DialogTitle>
+                Delete Category
+              </DialogTitle>
+            </DialogHeader>
+
+
+            <DialogDescription className="py-4">
+              Are you sure you want
+              to delete{" "}
+              <strong>
+                “
+                {
+                  deletingCategory?.name
+                }
+                ”
+              </strong>
+              ? Items in this category
+              will not be deleted, but
+              they may become
+              uncategorized.
+            </DialogDescription>
+
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setDeletingCategory(
+                    null
+                  )
+                }
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={
+                  deleteCategory.isPending
+                }
+                onClick={
+                  handleDeleteCategory
+                }
+              >
+                {deleteCategory.isPending
+                  ? "Deleting..."
+                  : "Delete"}
+              </Button>
+            </DialogFooter>
+
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   );
 }
+
 
 function toTitleCase(value) {
   return value.replace(
     /\w\S*/g,
     (word) =>
-      word.charAt(0).toUpperCase() +
-      word.slice(1).toLowerCase()
+      word
+        .charAt(0)
+        .toUpperCase() +
+      word
+        .slice(1)
+        .toLowerCase()
   );
 }
